@@ -24,6 +24,10 @@ jobs:
         run: |
           sed -i 's#<application#<uses-permission android:name="android.permission.VIBRATE"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>\n    <application#' android/app/src/main/AndroidManifest.xml
       - run: npx cap sync android
+      - name: Fixed signing key लगाओ
+        run: |
+          mkdir -p ~/.android
+          base64 -d debug.keystore.b64 > ~/.android/debug.keystore
       - run: |
           cd android
           chmod +x gradlew
