@@ -375,6 +375,262 @@ body{
   position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
   background:linear-gradient(135deg,#10b981,#059669);
   color:#fff;padding:12px 22px;border-radius:12px;
+  font-size:13px;font-weight:600;z-index:4000;
+  box-shadow:0 8px 24px rgba(16,185,129,.4);
+  transition:transform .35s ease;
+  max-width:90vw;text-align:center;
+}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+.toolbar{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;
+}
+.toolbar button{
+  padding:11px;border-radius:11px;
+  background:var(--card);border:1px solid var(--border);
+  color:var(--text-mid);font-size:12.5px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .2s;
+}
+.toolbar button:hover{background:var(--card-2);color:var(--text);border-color:var(--primary)}
+
+/* ============ REMINDER BOX ============ */
+.rem-title{font-weight:700;margin-bottom:10px;font-size:14px}
+.rem-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rem-grid label{font-size:11px;color:var(--text-dim)}
+.rem-grid input{
+  width:100%;padding:9px;border-radius:8px;margin-top:4px;
+  background:var(--bg-2);color:var(--text);border:1px solid var(--border);
+  font-family:inherit;font-size:14px;
+}
+.rem-status{margin-top:10px;font-size:12px;color:var(--text-mid);text-align:center}
+.rem-status.on{color:var(--done)}
+.rem-help{margin-top:8px;font-size:11px;color:var(--text-dim);line-height:1.6;text-align:center}
+
+/* ============ FILE VIEWER ============ */
+#viewer{position:fixed;inset:0;z-index:3000;background:var(--bg);display:flex;flex-direction:column}
+.v-top{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--card)}
+.v-name{flex:1;min-width:0;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v-btn{padding:8px 12px;border-radius:9px;background:var(--card-2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.v-body{flex:1;overflow:auto;margin:0;padding:16px;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;font-family:'Consolas','Monaco','Courier New',monospace;font-size:14px;line-height:1.7;color:#d8dde8}
+
+@media(min-width:600px){
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .subject-grid{grid-template-columns:1fr 1fr}
+  .toolbar{grid-template-columns:repeat(4,1fr)}
+  .hero h1{font-size:30px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+
+<script>
+/* ================== INITIAL DATA ================== */
+const initialData=[
+{subject:"इतिहास",book:"भारतीय इतिहास के कुछ विषय भाग 1, 2, 3",chapters:[
+["ईंटें, मनके तथा अस्थियाँ: हड़प्पा सभ्यता","done"],
+["राजा, किसान और नगर: आरंभिक राज्य और अर्थव्यवस्थाएँ","done"],
+["बंधुत्व, जाति तथा वर्ग: आरंभिक समाज","done"],
+["विचारक, विश्वास और इमारतें: सांस्कृतिक विकास","done"],
+["यात्रियों के नजरिए: समाज के बारे में उनकी समझ","doing"],
+["भक्ति-सूफी परंपराएँ","todo"],
+["एक साम्राज्य की राजधानी: विजयनगर","todo"],
+["किसान, जमींदार और राज्य","todo"],
+["उपनिवेशवाद और देहात","todo"],
+["विद्रोही और राज: 1857 का आंदोलन","todo"],
+["महात्मा गाँधी और राष्ट्रीय आंदोलन","todo"],
+["संविधान का निर्माण","todo"],
+["मानचित्र कार्य (Map Work)","todo"]
+]},
+{subject:"राजनीति विज्ञान",book:"समकालीन विश्व राजनीति",chapters:[
+["दो-ध्रुवीयता का अंत","done"],
+["सत्ता के समकालीन केंद्र","doing"],
+["समकालीन दक्षिण एशिया","todo"],
+["अंतर्राष्ट्रीय संगठन","todo"],
+["समकालीन विश्व में सुरक्षा","todo"],
+["पर्यावरण और प्राकृतिक संसाधन","todo"],
+["वैश्वीकरण","todo"]
+]},
+{subject:"राजनीति विज्ञान",book:"स्वतंत्र भारत में राजनीति",chapters:[
+["राष्ट्र-निर्माण की चुनौतियाँ","done"],
+["एक दल के प्रभुत्व का दौर","done"],
+["नियोजित विकास की राजनीति","done"],
+["भारत के विदेश संबंध","done"],
+["कांग्रेस प्रणाली: चुनौतियाँ और पुनर्स्थापना","todo"],
+["लोकतांत्रिक व्यवस्था का संकट","todo"],
+["क्षेत्रीय आकांक्षाएँ","todo"],
+["भारतीय राजनीति: नए बदलाव","todo"]
+]},
+{subject:"हिन्दी अनिवार्य",book:"आरोह भाग 2 — काव्य",chapters:[
+["आत्म-परिचय, एक गीत — हरिवंश राय बच्चन","done"],
+["पतंग — आलोक धन्वा","done"],
+["कविता के बहाने, बात सीधी थी पर — कुँवर नारायण","done"],
+["कैमरे में बंद अपाहिज — रघुवीर सहाय","done"],
+["उषा — शमशेर बहादुर सिंह","done"],
+["बादल राग — निराला","todo"],
+["कवितावली, लक्ष्मण-मूर्च्छा और राम का विलाप — तुलसीदास","todo"],
+["रुबाइयाँ, गज़ल — फ़िराक़ गोरखपुरी","todo"],
+["छोटा मेरा खेत, बगुलों के पंख — उमाशंकर जोशी","todo"]
+]},
+{subject:"हिन्दी अनिवार्य",book:"आरोह भाग 2 — गद्य",chapters:[
+["भक्तिन — महादेवी वर्मा","done"],
+["बाज़ार दर्शन — जैनेंद्र कुमार","done"],
+["काले मेघा पानी दे — धर्मवीर भारती","done"],
+["पहेली बूढ़ी काकी — राजेंद्र यादव","todo"],
+["यथार्थवाद और छायावाद — नंददुलारे वाजपेयी","todo"],
+["शिरीष के फूल — हजारी प्रसाद द्विवेदी","todo"],
+["पहलवान की ढोलक — फणीश्वरनाथ रेणु","todo"],
+["चार्ली चैप्लिन यानी हम सब — विष्णु खरे","todo"]
+]},
+{subject:"हिन्दी अनिवार्य",book:"वितान भाग 2",chapters:[
+["सिल्वर वैडिंग — मनोहर श्याम जोशी","todo"],
+["जूझ — आनंद यादव","todo"],
+["अतीत में दबे पाँव — ओम थानवी","todo"],
+["डायरी के पन्ने — ऐन फ्रैंक","todo"]
+]},
+{subject:"हिन्दी अनिवार्य",book:"अभिव्यक्ति एवं माध्यम",chapters:[
+["विभिन्न माध्यमों के लिए लेखन","todo"],
+["विशेष लेखन-स्वरूप और प्रकार","todo"],
+["कहानी का नाट्य रूपांतरण / रेडियो नाटक","todo"]
+]},
+{subject:"हिन्दी साहित्य",book:"अंतरा भाग 2 — काव्य",chapters:[
+["कार्नेलिया का गीत — जयशंकर प्रसाद","done"],
+["देवसेना का गीत — जयशंकर प्रसाद","done"],
+["सरोज-स्मृति — सूर्यकांत त्रिपाठी निराला","done"],
+["यह दीप अकेला, मैंने देखा एक बूँद — अज्ञेय","done"],
+["बनारस, दिशा — केदारनाथ सिंह","todo"],
+["सत्य, एक कम — विष्णु खरे","todo"],
+["तोड़ो, वसंत आया — रघुवीर सहाय","todo"],
+["भरत-राम का प्रेम, पद — तुलसीदास","todo"],
+["बारहमासा — जायसी","todo"],
+["पद — विद्यापति","todo"],
+["रामचंद्रचंद्रिका — केशवदास","todo"],
+["कवित्त/सवorder:1px solid var(--border);
+  color:var(--text-mid);font-size:12px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .2s;
+}
+.ch-actions button:hover{background:var(--border);color:var(--text)}
+.ch-actions button.danger{
+  background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35);color:#fca5a5;
+}
+.ch-actions button.danger:hover{background:rgba(239,68,68,.25);color:#fff}
+
+.files-section{
+  background:linear-gradient(135deg,var(--card),var(--card-2));
+  border:1px solid var(--border);border-radius:16px;
+  padding:16px;
+}
+.files-head{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  margin-bottom:14px;flex-wrap:wrap;
+}
+.files-head h3{
+  font-size:15px;font-weight:700;margin:0;
+  display:flex;align-items:center;gap:8px;
+}
+.note-count{
+  font-size:11px;padding:2px 8px;border-radius:20px;
+  background:rgba(139,92,246,.2);color:#c4b5fd;font-weight:700;
+}
+.import-btn{
+  padding:10px 14px;border-radius:11px;
+  background:linear-gradient(135deg,var(--primary-2),var(--primary));
+  border:none;color:#fff;font-weight:700;font-size:12.5px;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+  display:flex;align-items:center;gap:6px;
+}
+.import-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(139,92,246,.4)}
+
+.empty-files{
+  text-align:center;padding:28px 16px;color:var(--text-dim);font-size:13px;
+}
+.empty-files .em-icon{font-size:32px;margin-bottom:8px;opacity:.7}
+.empty-files p{margin:6px 0 0;line-height:1.5}
+
+.file-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;margin-bottom:8px;
+  background:var(--bg-2);border:1px solid var(--border);
+  border-radius:11px;cursor:pointer;
+  transition:all .18s;
+}
+.file-row:last-child{margin-bottom:0}
+.file-row:hover{
+  border-color:var(--primary);background:rgba(139,92,246,.06);
+  transform:translateX(2px);
+}
+.file-icon{
+  width:38px;height:38px;flex-shrink:0;
+  background:rgba(139,92,246,.15);
+  border:1px solid rgba(139,92,246,.3);
+  border-radius:10px;
+  display:grid;place-items:center;
+  font-size:18px;
+}
+.file-info{flex:1;min-width:0}
+.file-name{
+  font-size:13.5px;font-weight:600;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.file-meta{font-size:11px;color:var(--text-dim);margin-top:2px}
+.file-del{
+  width:32px;height:32px;flex-shrink:0;
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+  color:#fca5a5;border-radius:8px;cursor:pointer;
+  display:grid;place-items:center;font-size:13px;
+  transition:all .2s;
+}
+.file-del:hover{background:rgba(239,68,68,.25);color:#fff}
+
+/* ============ NOTES EDITOR ============ */
+.notes-section{
+  background:linear-gradient(135deg,var(--card),var(--card-2));
+  border:1px solid var(--border);border-radius:16px;
+  padding:16px;margin-top:14px;
+}
+.notes-textarea{
+  width:100%;min-height:180px;padding:12px 14px;
+  background:var(--bg-2);border:1px solid var(--border);
+  border-radius:11px;color:var(--text);
+  font-family:'Consolas','Monaco','Courier New',monospace;
+  font-size:13.5px;line-height:1.7;
+  resize:vertical;outline:none;transition:all .2s;
+}
+.notes-textarea:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(139,92,246,.15);
+}
+.notes-textarea::placeholder{color:var(--text-dim)}
+.notes-actions{
+  display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;
+}
+.notes-actions button{
+  flex:1;min-width:130px;padding:11px 12px;
+  border-radius:10px;font-weight:700;font-size:12.5px;
+  font-family:inherit;cursor:pointer;transition:all .2s;
+  border:1px solid var(--border);
+  background:var(--card-2);color:var(--text-mid);
+}
+.notes-actions button:hover{background:var(--border);color:var(--text)}
+.notes-actions .btn-primary{
+  background:linear-gradient(135deg,var(--primary-2),var(--primary));
+  border:none;color:#fff;
+}
+.notes-actions .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(139,92,246,.4)}
+.notes-actions .btn-success{
+  background:linear-gradient(135deg,#059669,#10b981);
+  border:none;color:#fff;
+}
+.notes-actions .btn-success:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(16,185,129,.4)}
+.notes-hint{
+  font-size:11px;color:var(--text-dim);font-weight:500;
+}
+
+#toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:linear-gradient(135deg,#10b981,#059669);
+  color:#fff;padding:12px 22px;border-radius:12px;
   font-size:13px;font-weight:600;z-index:2000;
   box-shadow:0 8px 24px rgba(16,185,129,.4);
   transition:transform .35s ease;
